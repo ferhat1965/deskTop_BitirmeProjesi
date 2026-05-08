@@ -1,0 +1,48 @@
+name: bitirme
+description: "Pothole Detection Desktop App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0-210.2.beta
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # Core & UI
+  google_fonts: ^6.1.0
+  
+  # Network & API
+  http: 1.2.1
+  
+  # Camera (Desktop Support)
+  camera: ^0.11.0
+  camera_windows: ^0.2.3
+  
+  # Map
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
+  
+  # Database (Desktop Support)
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  
+  # Local Storage & Paths
+  path_provider: ^2.1.2
+  path: ^1.8.3
+  
+  # Utility
+  image: ^4.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/models/

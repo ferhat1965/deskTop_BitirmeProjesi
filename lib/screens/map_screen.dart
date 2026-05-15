@@ -39,41 +39,102 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tespit Haritası (Radar)'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCenter: const LatLng(41.0082, 28.9784), // İstanbul merkezi
-          initialZoom: 11.0,
-        ),
+      body: Stack(
         children: [
-          TileLayer(
-            // Koyu temalı (CartoDB Dark Matter)
-            urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-            subdomains: const ['a', 'b', 'c', 'd'],
-          ),
-          MarkerLayer(
-            markers: _potholes.map((pothole) {
-              return Marker(
-                point: LatLng(pothole.latitude, pothole.longitude),
-                width: 40,
-                height: 40,
-                child: GestureDetector(
-                  onTap: () {
-                    _showPotholeDetails(pothole);
-                  },
-                  child: const Icon(
-                    Icons.warning_rounded,
-                    color: Colors.redAccent,
-                    size: 36,
-                  ),
+          Positioned.fill(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: const LatLng(38.6810, 39.2264), // Elazığ
+                initialZoom: 14.0,
+              ),
+              children: [
+                TileLayer(
+                  // Google Haritalar Uydu + İsimler (Hybrid) - Türkçe diline zorlandı
+                  urlTemplate: 'https://mt1.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}',
                 ),
-              );
-            }).toList(),
+                MarkerLayer(
+                  markers: _potholes.map((pothole) {
+                    return Marker(
+                      point: LatLng(pothole.latitude, pothole.longitude),
+                      width: 48,
+                      height: 48,
+                      child: GestureDetector(
+                        onTap: () {
+                          _showPotholeDetails(pothole);
+                        },
+                        child: const Icon(
+                          Icons.warning,
+                          color: Colors.redAccent,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 24.0,
+            left: 24.0,
+            right: 24.0,
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_potholes.length} Çukur',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.satellite_alt, color: Colors.blue[600], size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Uydu Haritası',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

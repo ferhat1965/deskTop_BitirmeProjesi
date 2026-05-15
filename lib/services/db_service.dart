@@ -60,4 +60,14 @@ class DbService {
       whereArgs: [id],
     );
   }
+
+  Future<int> deletePotholes(List<int> ids) async {
+    if (ids.isEmpty) return 0;
+    final db = await instance.database;
+    return await db.delete(
+      'potholes',
+      where: 'id IN (${List.filled(ids.length, '?').join(',')})',
+      whereArgs: ids,
+    );
+  }
 }

@@ -13,6 +13,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   List<PotholeRecord> _records = [];
   bool _isLoading = true;
+  Set<int> _selectedIds = {};
 
   @override
   void initState() {
@@ -29,8 +30,67 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _deleteRecord(int id) async {
+    // Silme onayı iste
+    final confirm = await _showDeleteConfirmation(1);
+    if (confirm != true) return;
+
     await DbService.instance.deletePothole(id);
+    _selectedIds.remove(id);
     _loadRecords();
+  }
+
+  Future<void> _deleteSelectedRecords() async {
+    if (_selectedIds.isEmpty) return;
+
+    final confirm = await _showDeleteConfirmation(_selectedIds.length);
+    if (confirm != true) return;
+
+    await DbService.instance.deletePotholes(_selectedIds.toList());
+    setState(() {
+      _selectedIds.clear();
+    });
+    _loadRecords();
+  }
+
+  Future<bool?> _showDeleteConfirmation(int count) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Kayıtları Sil'),
+        content: Text('$count adet kaydı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onSelectAll(bool? selected) {
+    setState(() {
+      if (selected == true) {
+        _selectedIds = _records.map((r) => r.id!).toSet();
+      } else {
+        _selectedIds.clear();
+      }
+    });
+  }
+
+  void _onSelectRow(int id, bool? selected) {
+    setState(() {
+      if (selected == true) {
+        _selectedIds.add(id);
+      } else {
+        _selectedIds.remove(id);
+      }
+    });
   }
 
   @override
@@ -40,6 +100,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
         title: const Text('Geçmiş Kayıtlar'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (_selectedIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: ActionChip(
+                backgroundColor: Colors.redAccent.withOpacity(0.2),
+                side: const BorderSide(color: Colors.redAccent),
+                avatar: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 20),
+                label: Text(
+                  'Seçilenleri Sil (\${_selectedIds.length})',
+                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                ),
+                onPressed: _deleteSelectedRecords,
+              ),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -55,6 +131,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
+                            onSelectAll: _onSelectAll,
+                            showCheckboxColumn: true,
                             columns: const [
                               DataColumn(label: Text('ID')),
                               DataColumn(label: Text('Tarih')),
@@ -66,6 +144,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ],
                             rows: _records.map((record) {
                               return DataRow(
+                                selected: _selectedIds.contains(record.id),
+                                onSelectChanged: (selected) => _onSelectRow(record.id!, selected),
                                 cells: [
                                   DataCell(Text(record.id.toString())),
                                   DataCell(Text(record.date)),

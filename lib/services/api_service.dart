@@ -28,11 +28,15 @@ class ApiService {
   }
 
   /// Görüntü dosyasını doğrudan (Multipart) gönderir. Base64 encode yükünden kurtarır.
-  static Future<List<dynamic>> detectPotholesFile(String filePath, {bool saveRecord = false}) async {
+  static Future<List<dynamic>> detectPotholesFile(String filePath, {bool saveRecord = false, double? latitude, double? longitude}) async {
     try {
+      var url = '$baseUrl/predict?save_record=$saveRecord';
+      if (latitude != null) url += '&latitude=$latitude';
+      if (longitude != null) url += '&longitude=$longitude';
+
       var request = http.MultipartRequest(
         'POST', 
-        Uri.parse('$baseUrl/predict?save_record=$saveRecord')
+        Uri.parse(url)
       );
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
 
@@ -88,5 +92,24 @@ class ApiService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// IP adresi üzerinden yaklaşık konumu (Enlem, Boylam) çeker. Windows'taki Geolocator çökmesini önler.
+  static Future<Map<String, double>?> getLocationFromIP() async {
+    try {
+      final response = await http.get(Uri.parse('http://ip-api.com/json/'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          return {
+            'latitude': (data['lat'] as num).toDouble(),
+            'longitude': (data['lon'] as num).toDouble(),
+          };
+        }
+      }
+    } catch (e) {
+      print('IP Konum Hatası: $e');
+    }
+    return null;
   }
 }

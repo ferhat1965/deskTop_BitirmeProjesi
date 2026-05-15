@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/db_service.dart';
 import '../models/pothole_record.dart';
+import 'package:path_provider/path_provider.dart';
 
 class LiveCameraScreen extends StatefulWidget {
   const LiveCameraScreen({super.key});
@@ -23,20 +25,65 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   DateTime _lastSaveTime = DateTime.now();
   List<dynamic> _detections = [];
 
+  Map<String, double>? _currentPosition;
+  Timer? _locationTimer;
+  Timer? _serverCheckTimer;
+
   @override
   void initState() {
     super.initState();
     _initCamera();
+    _initLocation();
     _checkServer();
+    
+    // Sunucu durumunu her 2 saniyede bir kontrol et
+    _serverCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      _checkServer();
+    });
   }
 
   Future<void> _checkServer() async {
     final isActive = await ApiService.checkServerStatus();
-    if (mounted) {
+    if (mounted && _isServerActive != isActive) {
       setState(() {
         _isServerActive = isActive;
       });
     }
+  }
+
+  Future<void> _initLocation() async {
+    // 1. Önce cihazın gerçek GPS/Konum servisini deniyoruz.
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+        timeLimit: const Duration(seconds: 15),
+      );
+      _currentPosition = {
+        'latitude': pos.latitude,
+        'longitude': pos.longitude,
+      };
+      print("Windows Gerçek Konumu Alındı: ${pos.latitude}, ${pos.longitude} (Hassasiyet: ${pos.accuracy}m)");
+    } catch (e) {
+      print("Windows Konumu Alınamadı, IP'ye dönülüyor: $e");
+      // 2. Eğer Windows Konum izni verilmemişse veya çip yoksa IP üzerinden gerçek konuma en yakın şehri alıyoruz.
+      _currentPosition = await ApiService.getLocationFromIP();
+    }
+    
+    // Her 10 saniyede bir konumu güncelle
+    _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best,
+          timeLimit: const Duration(seconds: 10),
+        );
+        _currentPosition = {
+          'latitude': pos.latitude,
+          'longitude': pos.longitude,
+        };
+      } catch (_) {
+        // Sessizce yoksay ve eski konumu tut
+      }
+    });
   }
 
   Future<void> _initCamera() async {
@@ -85,10 +132,35 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         final results = await ApiService.detectPotholesFile(
           picture.path,
           saveRecord: shouldSave,
+          latitude: _currentPosition?['latitude'],
+          longitude: _currentPosition?['longitude'],
         );
         
         if (shouldSave && results.isNotEmpty) {
           _lastSaveTime = now;
+          
+          // Resmi yerel kalici klasore kopyala
+          final directory = await getApplicationDocumentsDirectory();
+          final String dirPath = '${directory.path}/RoadGuard/Images';
+          await Directory(dirPath).create(recursive: true);
+          final permanentImagePath = '$dirPath/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await File(picture.path).copy(permanentImagePath);
+          
+          final dateStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+          final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+          
+          for (var det in results) {
+            final conf = det['confidence'] ?? 0.0;
+            final record = PotholeRecord(
+              date: dateStr,
+              time: timeStr,
+              confidence: conf,
+              latitude: _currentPosition?['latitude'] ?? 0.0,
+              longitude: _currentPosition?['longitude'] ?? 0.0,
+              imagePath: permanentImagePath,
+            );
+            await DbService.instance.insertPothole(record);
+          }
         }
         
         if (mounted && _isDetecting) {
@@ -110,6 +182,8 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   @override
   void dispose() {
     _isDetecting = false;
+    _locationTimer?.cancel();
+    _serverCheckTimer?.cancel();
     _controller?.dispose();
     super.dispose();
   }

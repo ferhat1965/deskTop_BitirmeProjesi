@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'live_camera_screen.dart';
 import 'map_screen.dart';
 import 'history_screen.dart';
+import 'profile_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -17,6 +18,7 @@ class _MainLayoutState extends State<MainLayout> {
     const LiveCameraScreen(),
     const MapScreen(),
     const HistoryScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -61,6 +63,11 @@ class _MainLayoutState extends State<MainLayout> {
                 icon: Icon(Icons.history_outlined),
                 selectedIcon: Icon(Icons.history),
                 label: Text('Geçmiş Kayıtlar'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: Text('Profil'),
               ),
             ],
           ),

@@ -109,7 +109,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 side: const BorderSide(color: Colors.redAccent),
                 avatar: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 20),
                 label: Text(
-                  'Seçilenleri Sil (\${_selectedIds.length})',
+                  'Seçilenleri Sil (${_selectedIds.length})',
                   style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                 ),
                 onPressed: _deleteSelectedRecords,
@@ -151,7 +151,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   DataCell(Text(record.date)),
                                   DataCell(Text(record.time)),
                                   DataCell(Text((record.confidence * 100).toStringAsFixed(1))),
-                                  DataCell(Text('\${record.latitude.toStringAsFixed(4)}, \${record.longitude.toStringAsFixed(4)}')),
+                                  DataCell(Text('${record.latitude.toStringAsFixed(4)}, ${record.longitude.toStringAsFixed(4)}')),
                                   DataCell(
                                     IconButton(
                                       icon: const Icon(Icons.image, color: Colors.blueAccent),

@@ -70,4 +70,9 @@ class DbService {
       whereArgs: ids,
     );
   }
+
+  Future<int> deleteAllPotholes() async {
+    final db = await instance.database;
+    return await db.delete('potholes');
+  }
 }

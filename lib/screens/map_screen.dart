@@ -150,9 +150,9 @@ class _MapScreenState extends State<MapScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tarih: \${record.date} \${record.time}'),
-            Text('Güven Skoru: % \${(record.confidence * 100).toStringAsFixed(1)}'),
-            Text('Konum: \${record.latitude.toStringAsFixed(4)}, \${record.longitude.toStringAsFixed(4)}'),
+            Text('Tarih: ${record.date} ${record.time}'),
+            Text('Güven Skoru: % ${(record.confidence * 100).toStringAsFixed(1)}'),
+            Text('Konum: ${record.latitude.toStringAsFixed(4)}, ${record.longitude.toStringAsFixed(4)}'),
           ],
         ),
         actions: [

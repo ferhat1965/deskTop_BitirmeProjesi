@@ -1,0 +1,65 @@
+﻿Analyzing deskTop_bitirme...                                    
+
+   info - 'background' is deprecated and shouldn't be used. Use surface instead. This feature was deprecated after v3.18.0-0.1.pre - lib\main.dart:36:11 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\history_screen.dart:108:51 - deprecated_member_use
+warning - Unused import: 'dart:convert' - lib\screens\live_camera_screen.dart:2:8 - unused_import
+   info - The private field _isProcessingFrame could be 'final' - lib\screens\live_camera_screen.dart:24:8 - prefer_final_fields
+warning - The value of the field '_isProcessingFrame' isn't used - lib\screens\live_camera_screen.dart:24:8 - unused_field
+   info - Don't invoke 'print' in production code - lib\screens\live_camera_screen.dart:65:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\screens\live_camera_screen.dart:67:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\screens\live_camera_screen.dart:176:9 - avoid_print
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\live_camera_screen.dart:215:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\live_camera_screen.dart:215:87 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\main_layout.dart:39:34 - prefer_const_constructors
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\main_layout.dart:42:67 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\map_screen.dart:47:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile_screen.dart:161:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\profile_screen.dart:238:21 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\profile_screen.dart:239:33 - prefer_const_literals_to_create_immutables
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\profile_screen.dart:254:23 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\profile_screen.dart:271:39 - deprecated_member_use
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:21:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:25:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:50:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:54:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:78:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:82:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\api_service.dart:111:7 - avoid_print
+  error - The name 'PotholeRecord' isn't a type, so it can't be used as a type argument - lib\services\db_helper.dart:51:10 - non_type_as_type_argument
+  error - Undefined class 'PotholeRecord' - lib\services\db_helper.dart:51:38 - undefined_class
+  error - The method 'PotholeRecord' isn't defined for the type 'DatabaseHelper' - lib\services\db_helper.dart:65:12 - undefined_method
+  error - The name 'PotholeRecord' isn't a type, so it can't be used as a type argument - lib\services\db_helper.dart:77:15 - non_type_as_type_argument
+  error - The method 'PotholeRecord' isn't defined for the type 'DatabaseHelper' - lib\services\db_helper.dart:85:14 - undefined_method
+   info - The imported package 'tflite_flutter' isn't a dependency of the importing package - lib\services\tflite_service.dart:6:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:tflite_flutter/tflite_flutter.dart' - lib\services\tflite_service.dart:6:8 - uri_does_not_exist
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:11:14 - non_type_as_type_argument
+  error - Undefined class 'Interpreter' - lib\services\tflite_service.dart:22:3 - undefined_class
+  error - The method 'InterpreterOptions' isn't defined for the type 'TFLiteService' - lib\services\tflite_service.dart:30:23 - undefined_method
+  error - Undefined name 'Interpreter' - lib\services\tflite_service.dart:34:28 - undefined_identifier
+   info - Don't invoke 'print' in production code - lib\services\tflite_service.dart:36:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\tflite_service.dart:37:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\tflite_service.dart:38:7 - avoid_print
+   info - Don't invoke 'print' in production code - lib\services\tflite_service.dart:40:7 - avoid_print
+  error - The method 'Detection' isn't defined for the type 'TFLiteService' - lib\services\tflite_service.dart:72:10 - undefined_method
+  error - Undefined name 'Interpreter' - lib\services\tflite_service.dart:88:25 - undefined_identifier
+  error - The property 'confidence' can't be unconditionally accessed because the receiver can be 'null' - lib\services\tflite_service.dart:141:53 - unchecked_use_of_nullable_value
+  error - The property 'confidence' can't be unconditionally accessed because the receiver can be 'null' - lib\services\tflite_service.dart:141:68 - unchecked_use_of_nullable_value
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:168:15 - non_type_as_type_argument
+  error - The method 'Detection' isn't defined for the type 'TFLiteService' - lib\services\tflite_service.dart:182:10 - undefined_method
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:187:22 - non_type_as_type_argument
+  error - Undefined name 'Interpreter' - lib\services\tflite_service.dart:192:25 - undefined_identifier
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:228:15 - non_type_as_type_argument
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:229:10 - non_type_as_type_argument
+   info - Use 'const' for final variables initialized to a constant value - lib\services\tflite_service.dart:230:5 - prefer_const_declarations
+  error - The method 'Detection' isn't defined for the type 'TFLiteService' - lib\services\tflite_service.dart:266:18 - undefined_method
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:280:15 - non_type_as_type_argument
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:280:40 - non_type_as_type_argument
+  error - The property 'confidence' can't be unconditionally accessed because the receiver can be 'null' - lib\services\tflite_service.dart:283:28 - unchecked_use_of_nullable_value
+  error - The property 'confidence' can't be unconditionally accessed because the receiver can be 'null' - lib\services\tflite_service.dart:283:51 - unchecked_use_of_nullable_value
+  error - The name 'Detection' isn't a type, so it can't be used as a type argument - lib\services\tflite_service.dart:284:10 - non_type_as_type_argument
+  error - Undefined class 'Detection' - lib\services\tflite_service.dart:299:31 - undefined_class
+  error - Undefined class 'Detection' - lib\services\tflite_service.dart:299:44 - undefined_class
+   info - The imported package 'desktop_bitirme' isn't a dependency of the importing package - test\widget_test.dart:11:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:desktop_bitirme/main.dart' - test\widget_test.dart:11:8 - uri_does_not_exist
+  error - The name 'MyApp' isn't a class - test\widget_test.dart:16:35 - creation_with_non_type
+

@@ -26,6 +26,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   List<dynamic> _detections = [];
 
   Map<String, double>? _currentPosition;
+  Map<String, double>? _lastSavedPosition;
   Timer? _locationTimer;
   Timer? _serverCheckTimer;
 
@@ -91,7 +92,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
     if (_cameras != null && _cameras!.isNotEmpty) {
       _controller = CameraController(
         _cameras![0],
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
       );
       await _controller!.initialize();
@@ -127,7 +128,24 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         final XFile picture = await _controller!.takePicture();
         
         final now = DateTime.now();
-        final bool shouldSave = now.difference(_lastSaveTime).inSeconds >= 3;
+        
+        // 1. Temel bekleme süresi: Saniyede onlarca kare yerine en az 2 saniye bekle
+        bool shouldSave = now.difference(_lastSaveTime).inSeconds >= 2;
+
+        // 2. Aynı çukuru defalarca kaydetmeyi engelleme (Mesafe ve Zaman kontrolü)
+        if (shouldSave && _lastSavedPosition != null && _currentPosition != null) {
+          double distance = Geolocator.distanceBetween(
+            _lastSavedPosition!['latitude']!,
+            _lastSavedPosition!['longitude']!,
+            _currentPosition!['latitude']!,
+            _currentPosition!['longitude']!,
+          );
+
+          // Eğer konum 15 metreden daha az değiştiyse ve üzerinden çok zaman geçmediyse aynı çukurdur, kaydetme.
+          if (distance < 15.0 && now.difference(_lastSaveTime).inSeconds < 60) {
+            shouldSave = false;
+          }
+        }
 
         final results = await ApiService.detectPotholesFile(
           picture.path,
@@ -138,6 +156,12 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         
         if (shouldSave && results.isNotEmpty) {
           _lastSaveTime = now;
+          if (_currentPosition != null) {
+            _lastSavedPosition = {
+              'latitude': _currentPosition!['latitude']!,
+              'longitude': _currentPosition!['longitude']!,
+            };
+          }
           
           // Resmi yerel kalici klasore kopyala
           final directory = await getApplicationDocumentsDirectory();
@@ -206,7 +230,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
                 'Canlı Tespit Sistemi',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               Container(
@@ -242,21 +266,27 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CameraPreview(_controller!),
-                      // Bounding Box Çizimi
-                      CustomPaint(
-                        painter: BoundingBoxPainter(
-                          detections: _detections,
-                          imageSize: _controller!.value.previewSize!,
+              child: SizedBox(
+                width: double.infinity,
+                height: double.infinity,
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: 1000 * _controller!.value.aspectRatio,
+                    height: 1000,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CameraPreview(_controller!),
+                        // Bounding Box Çizimi
+                        CustomPaint(
+                          painter: BoundingBoxPainter(
+                            detections: _detections,
+                            imageSize: _controller!.value.previewSize ?? const Size(1280, 720),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -326,12 +356,12 @@ class BoundingBoxPainter extends CustomPainter {
         style: const TextStyle(
           color: Colors.white,
           backgroundColor: Colors.red,
-          fontSize: 14,
+          fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
       );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(left, top - 20));
+      textPainter.paint(canvas, Offset(left, top - textPainter.height));
     }
   }
 

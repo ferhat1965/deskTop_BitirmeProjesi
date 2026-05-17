@@ -36,8 +36,18 @@ class _MainLayoutState extends State<MainLayout> {
             },
             labelType: NavigationRailLabelType.all,
             backgroundColor: Theme.of(context).colorScheme.surface,
-            unselectedIconTheme: IconThemeData(color: Colors.white54),
+            unselectedIconTheme: IconThemeData(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
             selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+            unselectedLabelTextStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w500,
+            ),
+            selectedLabelTextStyle: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
             useIndicator: true,
             indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
             leading: Padding(
@@ -72,7 +82,7 @@ class _MainLayoutState extends State<MainLayout> {
             ],
           ),
           
-          const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
+          VerticalDivider(thickness: 1, width: 1, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
           
           // Main Content Area
           Expanded(

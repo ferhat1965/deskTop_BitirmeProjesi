@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../services/db_service.dart';
+import '../main.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,18 +15,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isDarkMode = true;
   String _userName = 'Ferhat Rammok';
   String _profileImage = 'https://i.pravatar.cc/150?u=ferhat';
-  double _scannedKm = 4.2;
+  double _scannedKm = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _isDarkMode = appThemeNotifier.value == ThemeMode.dark;
     _loadStats();
   }
 
   Future<void> _loadStats() async {
     final records = await DbService.instance.fetchAllPotholes();
+    
+    double totalDistanceMeters = 0.0;
+    
+    if (records.length > 1) {
+      for (int i = 0; i < records.length - 1; i++) {
+        final current = records[i];
+        final next = records[i + 1];
+        
+        if (current.latitude != 0.0 && current.longitude != 0.0 &&
+            next.latitude != 0.0 && next.longitude != 0.0) {
+          
+          double distance = Geolocator.distanceBetween(
+            current.latitude,
+            current.longitude,
+            next.latitude,
+            next.longitude
+          );
+          
+          if (distance < 100000) { // Hatalı GPS atlamalarını önlemek için (100km altı)
+            totalDistanceMeters += distance;
+          }
+        }
+      }
+    }
+
     setState(() {
       _totalDetections = records.length;
+      _scannedKm = totalDistanceMeters / 1000.0;
     });
   }
 
@@ -151,14 +180,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Text(
                                 _userName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(
+                              const Icon(
                                 Icons.edit,
                                 size: 18,
                                 color: Colors.blueAccent,
@@ -172,15 +201,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 'Öncü Sürücü',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey[300],
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(
+                              Icon(
                                 Icons.workspace_premium,
                                 size: 20,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ],
                           ),
@@ -211,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context,
                     icon: Icons.route,
                     value:
-                        '${_scannedKm == 0 ? "0" : _scannedKm.toStringAsFixed(1)}k',
+                        _scannedKm == 0 ? "0" : _scannedKm.toStringAsFixed(2),
                     label: 'KM Tarandı',
                     iconColor: Colors.blueAccent,
                   ),
@@ -239,12 +268,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         const Icon(Icons.dark_mode, color: Colors.blueAccent),
                         const SizedBox(width: 16),
-                        const Text(
+                        Text(
                           'Karanlık Tema',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -257,7 +286,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         setState(() {
                           _isDarkMode = val;
                         });
-                        // İleride gerçek bir ThemeProvider'a bağlanabilir
+                        appThemeNotifier.value = val ? ThemeMode.dark : ThemeMode.light;
                       },
                     ),
                   ],
@@ -267,34 +296,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 24),
 
             // Reset Button Card
-            Card(
-              color: Colors.redAccent.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Colors.redAccent, width: 1),
-              ),
-              child: InkWell(
-                onTap: _resetStats,
-                borderRadius: BorderRadius.circular(16),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 20.0,
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _resetStats,
+                icon: const Icon(Icons.delete_sweep),
+                label: const Text('Tespiti ve KM\'yi Sıfırla'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.redAccent.shade400,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.delete_sweep, color: Colors.redAccent),
-                      SizedBox(width: 16),
-                      Text(
-                        'Tespiti ve KM\'yi Sıfırla',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                    ],
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -324,10 +341,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
@@ -335,7 +352,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               label,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontWeight: FontWeight.w500,
               ),
             ),

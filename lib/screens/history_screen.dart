@@ -57,14 +57,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Kayıtları Sil'),
-        content: Text('$count adet kaydı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'),
+        content: Text(
+          '$count adet kaydı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Sil'),
           ),
@@ -107,10 +112,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: ActionChip(
                 backgroundColor: Colors.redAccent.withOpacity(0.2),
                 side: const BorderSide(color: Colors.redAccent),
-                avatar: const Icon(Icons.delete_sweep, color: Colors.redAccent, size: 20),
+                avatar: const Icon(
+                  Icons.delete_sweep,
+                  color: Colors.redAccent,
+                  size: 20,
+                ),
                 label: Text(
                   'Seçilenleri Sil (${_selectedIds.length})',
-                  style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onPressed: _deleteSelectedRecords,
               ),
@@ -120,61 +132,78 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _records.isEmpty
-              ? const Center(child: Text('Henüz kayıt bulunmamaktadır.'))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Card(
-                    color: Theme.of(context).colorScheme.surface,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: ListView(
-                      children: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            onSelectAll: _onSelectAll,
-                            showCheckboxColumn: true,
-                            columns: const [
-                              DataColumn(label: Text('ID')),
-                              DataColumn(label: Text('Tarih')),
-                              DataColumn(label: Text('Saat')),
-                              DataColumn(label: Text('Güven (%)')),
-                              DataColumn(label: Text('Konum (Lat, Lng)')),
-                              DataColumn(label: Text('Görsel')),
-                              DataColumn(label: Text('İşlem')),
-                            ],
-                            rows: _records.map((record) {
-                              return DataRow(
-                                selected: _selectedIds.contains(record.id),
-                                onSelectChanged: (selected) => _onSelectRow(record.id!, selected),
-                                cells: [
-                                  DataCell(Text(record.id.toString())),
-                                  DataCell(Text(record.date)),
-                                  DataCell(Text(record.time)),
-                                  DataCell(Text((record.confidence * 100).toStringAsFixed(1))),
-                                  DataCell(Text('${record.latitude.toStringAsFixed(4)}, ${record.longitude.toStringAsFixed(4)}')),
-                                  DataCell(
-                                    IconButton(
-                                      icon: const Icon(Icons.image, color: Colors.blueAccent),
-                                      onPressed: () {
-                                        _showImageDialog(record.imagePath);
-                                      },
-                                    ),
-                                  ),
-                                  DataCell(
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                      onPressed: () => _deleteRecord(record.id!),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          ? const Center(child: Text('Henüz kayıt bulunmamaktadır.'))
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: Theme.of(context).colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: ListView(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        onSelectAll: _onSelectAll,
+                        showCheckboxColumn: true,
+                        columns: const [
+                          DataColumn(label: Text('ID')),
+                          DataColumn(label: Text('Tarih')),
+                          DataColumn(label: Text('Saat')),
+                          DataColumn(label: Text('Güven (%)')),
+                          DataColumn(label: Text('Konum (Lat, Lng)')),
+                          DataColumn(label: Text('Görsel')),
+                          DataColumn(label: Text('İşlem')),
+                        ],
+                        rows: _records.map((record) {
+                          return DataRow(
+                            selected: _selectedIds.contains(record.id),
+                            onSelectChanged: (selected) =>
+                                _onSelectRow(record.id!, selected),
+                            cells: [
+                              DataCell(Text(record.id.toString())),
+                              DataCell(Text(record.date)),
+                              DataCell(Text(record.time)),
+                              DataCell(
+                                Text(
+                                  (record.confidence * 100).toStringAsFixed(1),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  '${record.latitude.toStringAsFixed(4)}, ${record.longitude.toStringAsFixed(4)}',
+                                ),
+                              ),
+                              DataCell(
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.image,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  onPressed: () {
+                                    _showImageDialog(record.imagePath);
+                                  },
+                                ),
+                              ),
+                              DataCell(
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () => _deleteRecord(record.id!),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -189,7 +218,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Kapat'),
-          )
+          ),
         ],
       ),
     );

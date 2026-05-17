@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/db_service.dart';
 import '../main.dart';
 
@@ -14,14 +17,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _totalDetections = 0;
   bool _isDarkMode = true;
   String _userName = 'Ferhat Rammok';
-  String _profileImage = 'https://i.pravatar.cc/150?u=ferhat';
+  String _profileImage = '';
   double _scannedKm = 0.0;
 
   @override
   void initState() {
     super.initState();
     _isDarkMode = appThemeNotifier.value == ThemeMode.dark;
+    _loadProfileData();
     _loadStats();
+  }
+
+  Future<void> _loadProfileData() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _userName = prefs.getString('userName') ?? 'Ferhat Rammok';
+        _profileImage = prefs.getString('profileImage') ?? '';
+      });
+    }
+  }
+
+  Future<void> _saveProfileData(String name, String imagePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', name);
+    await prefs.setString('profileImage', imagePath);
   }
 
   Future<void> _loadStats() async {
@@ -90,44 +110,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _editProfile() async {
     final nameCtrl = TextEditingController(text: _userName);
-    final imgCtrl = TextEditingController(text: _profileImage);
+    String? newImagePath = _profileImage;
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Profili Düzenle'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'İsim Soyisim'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: imgCtrl,
-              decoration: const InputDecoration(labelText: 'Profil Resmi URL'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Profili Düzenle'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'İsim Soyisim'),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      FilePickerResult? pickResult = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                      );
+                      if (pickResult != null && pickResult.files.single.path != null) {
+                        setStateDialog(() {
+                          newImagePath = pickResult.files.single.path!;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.image),
+                    label: const Text('Bilgisayardan Resim Seç'),
+                  ),
+                  if (newImagePath != null && !newImagePath!.startsWith('http'))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text('Seçilen: ${newImagePath!.split('\\').last}', style: const TextStyle(fontSize: 12)),
+                    )
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Kaydet'),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
 
     if (result == true) {
+      final finalName = nameCtrl.text;
+      final finalImage = newImagePath ?? _profileImage;
+      
       setState(() {
-        _userName = nameCtrl.text;
-        _profileImage = imgCtrl.text;
+        _userName = finalName;
+        _profileImage = finalImage;
       });
+      
+      await _saveProfileData(finalName, finalImage);
     }
   }
 
@@ -169,7 +215,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: CircleAvatar(
                           radius: 45,
-                          backgroundImage: NetworkImage(_profileImage),
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: _profileImage.isNotEmpty
+                              ? (_profileImage.startsWith('http')
+                                  ? NetworkImage(_profileImage) as ImageProvider
+                                  : FileImage(File(_profileImage)))
+                              : null,
+                          child: _profileImage.isEmpty
+                              ? Icon(Icons.person, size: 50, color: Colors.grey.shade600)
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 24),
@@ -191,25 +245,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Icons.edit,
                                 size: 18,
                                 color: Colors.blueAccent,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                'Öncü Sürücü',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.workspace_premium,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ],
                           ),

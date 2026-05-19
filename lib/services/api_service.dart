@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -84,13 +85,60 @@ class ApiService {
     }
   }
 
-  /// Sunucu durumunu kontrol eder.
+  static bool _isStartingBackend = false;
+
+  /// Sunucu durumunu kontrol eder ve kapalıysa otomatik başlatmayı dener.
   static Future<bool> checkServerStatus() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/'));
+      final response = await http.get(Uri.parse('$baseUrl/')).timeout(const Duration(seconds: 2));
       return response.statusCode == 200;
     } catch (e) {
+      // Sunucu çevrimdışı, arka planda başlatmayı deneyelim (Sadece Windows)
+      if (!_isStartingBackend) {
+        _tryStartBackend();
+      }
       return false;
+    }
+  }
+
+  static void _tryStartBackend() async {
+    _isStartingBackend = true;
+    try {
+      if (Platform.isWindows) {
+        // Geliştirme (flutter run) ve Production (exe) dizinlerini idare etmek için:
+        final currentDir = Directory.current.path;
+        final exeDir = File(Platform.resolvedExecutable).parent.path;
+
+        // Önce üretim (exe) ortamındaki konuma bak
+        String backendDir = '$exeDir\\backend';
+        String venvPython = '$backendDir\\.venv\\Scripts\\pythonw.exe';
+        String appPy = '$backendDir\\app.py';
+
+        if (!(await File(appPy).exists())) {
+          // Bulunamazsa geliştirme (flutter run) ortamındaki konuma bak
+          backendDir = '$currentDir\\backend';
+          venvPython = '$backendDir\\.venv\\Scripts\\pythonw.exe';
+          appPy = '$backendDir\\app.py';
+        }
+
+        if (await File(venvPython).exists()) {
+          // Virtual environment python'u ile başlat
+          await Process.start(venvPython, [appPy], workingDirectory: backendDir, runInShell: false, mode: ProcessStartMode.detached);
+          print('Backend otomatik başlatıldı (Venv). Yol: $appPy');
+        } else if (await File(appPy).exists()) {
+          // Sistem python'u ile başlat
+          await Process.start('pythonw', [appPy], workingDirectory: backendDir, runInShell: false, mode: ProcessStartMode.detached);
+          print('Backend otomatik başlatıldı (Sistem Python). Yol: $appPy');
+        } else {
+          print('Backend scripti (app.py) bulunamadı!');
+        }
+      }
+    } catch (e) {
+      print('Backend otomatik başlatılamadı: $e');
+    } finally {
+      // Çok sık denememek için bekleme süresi
+      await Future.delayed(const Duration(seconds: 10));
+      _isStartingBackend = false;
     }
   }
 

@@ -151,6 +151,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           DataColumn(label: Text('ID')),
                           DataColumn(label: Text('Tarih')),
                           DataColumn(label: Text('Saat')),
+                          DataColumn(label: Text('Tür')),
                           DataColumn(label: Text('Güven (%)')),
                           DataColumn(label: Text('Konum (Lat, Lng)')),
                           DataColumn(label: Text('Görsel')),
@@ -165,6 +166,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               DataCell(Text(record.id.toString())),
                               DataCell(Text(record.date)),
                               DataCell(Text(record.time)),
+                              DataCell(_buildTypeBadge(record.className)),
                               DataCell(
                                 Text(
                                   (record.confidence * 100).toStringAsFixed(1),
@@ -204,6 +206,42 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildTypeBadge(String className) {
+    const translations = {
+      'minor_pothole': 'Hafif Çukur',
+      'medium_pothole': 'Orta Çukur',
+      'major_pothole': 'Ağır Çukur',
+      'speed_bump': 'Kasis',
+    };
+
+    const colors = {
+      'minor_pothole': Colors.amber,
+      'medium_pothole': Colors.orange,
+      'major_pothole': Colors.redAccent,
+      'speed_bump': Colors.blueAccent,
+    };
+
+    final text = translations[className] ?? className;
+    final color = colors[className] ?? Colors.grey;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1.5),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 

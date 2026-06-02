@@ -21,8 +21,9 @@ class DbService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -35,9 +36,20 @@ class DbService {
         confidence REAL NOT NULL,
         latitude REAL NOT NULL,
         longitude REAL NOT NULL,
-        imagePath TEXT NOT NULL
+        imagePath TEXT NOT NULL,
+        className TEXT NOT NULL DEFAULT 'minor_pothole'
       )
     ''');
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      try {
+        await db.execute("ALTER TABLE potholes ADD COLUMN className TEXT NOT NULL DEFAULT 'minor_pothole'");
+      } catch (e) {
+        print("Database upgrade error: \$e");
+      }
+    }
   }
 
   Future<int> insertPothole(PotholeRecord record) async {

@@ -15,6 +15,27 @@ class _MapScreenState extends State<MapScreen> {
   List<PotholeRecord> _potholes = [];
   final MapController _mapController = MapController();
 
+  static const Map<String, String> _classTranslations = {
+    'minor_pothole': 'Hafif Çukur',
+    'medium_pothole': 'Orta Çukur',
+    'major_pothole': 'Ağır Çukur',
+    'speed_bump': 'Kasis',
+  };
+
+  static const Map<String, Color> _classColors = {
+    'minor_pothole': Colors.amber,
+    'medium_pothole': Colors.orange,
+    'major_pothole': Colors.redAccent,
+    'speed_bump': Colors.blueAccent,
+  };
+
+  static const Map<String, IconData> _classIcons = {
+    'minor_pothole': Icons.warning_amber_rounded,
+    'medium_pothole': Icons.warning_rounded,
+    'major_pothole': Icons.report_gmailerrorred_rounded,
+    'speed_bump': Icons.linear_scale_rounded,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +76,10 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 MarkerLayer(
                   markers: _potholes.map((pothole) {
+                    final className = pothole.className;
+                    final color = _classColors[className] ?? Colors.redAccent;
+                    final icon = _classIcons[className] ?? Icons.warning;
+
                     return Marker(
                       point: LatLng(pothole.latitude, pothole.longitude),
                       width: 48,
@@ -63,9 +88,9 @@ class _MapScreenState extends State<MapScreen> {
                         onTap: () {
                           _showPotholeDetails(pothole);
                         },
-                        child: const Icon(
-                          Icons.warning,
-                          color: Colors.redAccent,
+                        child: Icon(
+                          icon,
+                          color: color,
                           size: 48,
                         ),
                       ),
@@ -142,17 +167,55 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _showPotholeDetails(PotholeRecord record) {
+    final className = record.className;
+    final translatedName = _classTranslations[className] ?? className;
+    final color = _classColors[className] ?? Colors.grey;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Çukur Detayı'),
+        title: Row(
+          children: [
+            Icon(
+              _classIcons[className] ?? Icons.warning,
+              color: color,
+            ),
+            const SizedBox(width: 8),
+            const Text('Kayıt Detayı'),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const Text('Tür: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color, width: 1.5),
+                  ),
+                  child: Text(
+                    translatedName,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Text('Tarih: ${record.date} ${record.time}'),
+            const SizedBox(height: 4),
             Text('Güven Skoru: % ${(record.confidence * 100).toStringAsFixed(1)}'),
-            Text('Konum: ${record.latitude.toStringAsFixed(4)}, ${record.longitude.toStringAsFixed(4)}'),
+            const SizedBox(height: 4),
+            Text('Konum: ${record.latitude.toStringAsFixed(6)}, ${record.longitude.toStringAsFixed(6)}'),
           ],
         ),
         actions: [

@@ -182,6 +182,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
               latitude: _currentPosition?['latitude'] ?? 0.0,
               longitude: _currentPosition?['longitude'] ?? 0.0,
               imagePath: permanentImagePath,
+              className: det['class'] ?? 'minor_pothole',
             );
             await DbService.instance.insertPothole(record);
           }
@@ -319,16 +320,25 @@ class BoundingBoxPainter extends CustomPainter {
   final List<dynamic> detections;
   final Size imageSize;
 
+  static const Map<String, String> classTranslations = {
+    'minor_pothole': 'Hafif Çukur',
+    'medium_pothole': 'Orta Çukur',
+    'major_pothole': 'Ağır Çukur',
+    'speed_bump': 'Kasis',
+  };
+
+  static const Map<String, Color> classColors = {
+    'minor_pothole': Colors.amber,
+    'medium_pothole': Colors.orange,
+    'major_pothole': Colors.redAccent,
+    'speed_bump': Colors.blueAccent,
+  };
+
   BoundingBoxPainter({required this.detections, required this.imageSize});
 
   @override
   void paint(Canvas canvas, Size size) {
     if (detections.isEmpty) return;
-
-    final paint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
 
     final textPainter = TextPainter(
       textDirection: TextDirection.ltr,
@@ -339,7 +349,15 @@ class BoundingBoxPainter extends CustomPainter {
       if (rect == null) continue;
 
       final conf = det['confidence'] ?? 0.0;
-      
+      final className = det['class'] ?? 'minor_pothole';
+      final translatedName = classTranslations[className] ?? className;
+      final color = classColors[className] ?? Colors.red;
+
+      final paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0;
+
       // Since coordinates from backend are normalized (0.0 to 1.0)
       // On Windows desktop, the CameraPreview is typically mirrored horizontally (like a mirror),
       // but the raw frames sent to the backend are NOT mirrored.
@@ -352,10 +370,10 @@ class BoundingBoxPainter extends CustomPainter {
       canvas.drawRect(Rect.fromLTRB(left, top, right, bottom), paint);
 
       textPainter.text = TextSpan(
-        text: 'Pothole ${(conf * 100).toStringAsFixed(1)}%',
-        style: const TextStyle(
+        text: '$translatedName ${(conf * 100).toStringAsFixed(1)}%',
+        style: TextStyle(
           color: Colors.white,
-          backgroundColor: Colors.red,
+          backgroundColor: color,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),

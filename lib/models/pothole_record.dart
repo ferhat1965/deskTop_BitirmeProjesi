@@ -6,6 +6,7 @@ class PotholeRecord {
   final double latitude;
   final double longitude;
   final String imagePath;
+  final String className;
 
   PotholeRecord({
     this.id,
@@ -15,6 +16,7 @@ class PotholeRecord {
     required this.latitude,
     required this.longitude,
     required this.imagePath,
+    this.className = 'minor_pothole',
   });
 
   Map<String, dynamic> toMap() {
@@ -26,18 +28,20 @@ class PotholeRecord {
       'latitude': latitude,
       'longitude': longitude,
       'imagePath': imagePath,
+      'className': className,
     };
   }
 
   factory PotholeRecord.fromMap(Map<String, dynamic> map) {
     return PotholeRecord(
       id: map['id'],
-      date: map['date'],
-      time: map['time'],
-      confidence: map['confidence'],
-      latitude: map['latitude'],
-      longitude: map['longitude'],
-      imagePath: map['imagePath'],
+      date: map['date'] ?? '',
+      time: map['time'] ?? '',
+      confidence: map['confidence'] ?? 0.0,
+      latitude: map['latitude'] ?? 0.0,
+      longitude: map['longitude'] ?? 0.0,
+      imagePath: map['imagePath'] ?? '',
+      className: map['className'] ?? 'minor_pothole',
     );
   }
 }

@@ -27,7 +27,7 @@ class PotholeApp extends StatelessWidget {
       valueListenable: appThemeNotifier,
       builder: (context, themeMode, _) {
         return MaterialApp(
-          title: 'RoadGuard AI Desktop',
+          title: 'YolGüven',
           debugShowCheckedModeBanner: false,
           themeMode: themeMode,
           theme: ThemeData(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,6 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   List<CameraDescription>? _cameras;
   bool _isDetecting = false;
   bool _isServerActive = false;
-  bool _isProcessingFrame = false;
   DateTime _lastSaveTime = DateTime.now();
   List<dynamic> _detections = [];
 

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "desktop_bitirme" "\0"
+            VALUE "CompanyName", "YolGüven" "\0"
+            VALUE "FileDescription", "YolGüven - Yol Güvenliği ve Akıllı Gözlem Sistemi" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "desktop_bitirme" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "desktop_bitirme.exe" "\0"
-            VALUE "ProductName", "desktop_bitirme" "\0"
+            VALUE "InternalName", "yolguven" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 YolGüven. All rights reserved." "\0"
+            VALUE "OriginalFilename", "yolguven.exe" "\0"
+            VALUE "ProductName", "YolGüven" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

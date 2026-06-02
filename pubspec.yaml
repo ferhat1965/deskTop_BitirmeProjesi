@@ -1,5 +1,5 @@
-name: bitirme
-description: "Pothole Detection Desktop App"
+name: yolguven
+description: "YolGüven - Yol Güvenliği ve Akıllı Gözlem Sistemi"
 publish_to: 'none'
 
 version: 1.0.0+1

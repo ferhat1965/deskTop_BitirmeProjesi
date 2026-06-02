@@ -12,4 +12,4 @@ cd ..
 
 echo.
 echo [2/2] Masaustu (Frontend) uygulamasi baslatiliyor...
-start cmd /k "title RoadGuard Frontend && flutter run -d windows"
+start cmd /k "title YolGüven Frontend && flutter run -d windows"

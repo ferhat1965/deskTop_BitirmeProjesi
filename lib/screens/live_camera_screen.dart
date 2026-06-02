@@ -70,12 +70,12 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
       _currentPosition = await ApiService.getLocationFromIP();
     }
     
-    // Her 10 saniyede bir konumu güncelle
-    _locationTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    // Her 2 saniyede bir konumu güncelle (Daha hassas takip için)
+    _locationTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       try {
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.best,
-          timeLimit: const Duration(seconds: 10),
+          timeLimit: const Duration(seconds: 2),
         );
         _currentPosition = {
           'latitude': pos.latitude,
@@ -129,11 +129,9 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         
         final now = DateTime.now();
         
-        // 1. Temel bekleme süresi: Saniyede onlarca kare yerine en az 2 saniye bekle
-        bool shouldSave = now.difference(_lastSaveTime).inSeconds >= 2;
-
-        // 2. Aynı çukuru defalarca kaydetmeyi engelleme (Mesafe ve Zaman kontrolü)
-        if (shouldSave && _lastSavedPosition != null && _currentPosition != null) {
+        // 1. Gelişmiş Mükerrer Kontrolü ve Cooldown Akıllı Algoritması
+        bool isDuplicate = false;
+        if (_lastSavedPosition != null && _currentPosition != null) {
           double distance = Geolocator.distanceBetween(
             _lastSavedPosition!['latitude']!,
             _lastSavedPosition!['longitude']!,
@@ -141,11 +139,20 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
             _currentPosition!['longitude']!,
           );
 
-          // Eğer konum 15 metreden daha az değiştiyse ve üzerinden çok zaman geçmediyse aynı çukurdur, kaydetme.
-          if (distance < 15.0 && now.difference(_lastSaveTime).inSeconds < 60) {
-            shouldSave = false;
+          final secondsSinceLastSave = now.difference(_lastSaveTime).inSeconds;
+
+          // - Araç tamamen duruyorsa/trafik ışığındaysa (mesafe < 2m), 30 saniye boyunca tekrar kaydetme.
+          // - Araç çok yavaş hareket ediyorsa (mesafe < 8m), 6 saniye boyunca tekrar kaydetme.
+          // - Araç normal hızda seyrediyorsa (mesafe >= 8m), her yeni çukuru anında kaydet.
+          if (distance < 2.0 && secondsSinceLastSave < 30) {
+            isDuplicate = true;
+          } else if (distance < 8.0 && secondsSinceLastSave < 6) {
+            isDuplicate = true;
           }
         }
+
+        // Mükerrer değilse ve en az 1 saniye geçmişse kaydetmeye izin ver
+        bool shouldSave = !isDuplicate && now.difference(_lastSaveTime).inSeconds >= 1;
 
         final results = await ApiService.detectPotholesFile(
           picture.path,
@@ -154,7 +161,10 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
           longitude: _currentPosition?['longitude'],
         );
         
-        if (shouldSave && results.isNotEmpty) {
+        // Tek kare içindeki çakışan (aynı çukuru temsil eden) mükerrer kutuları temizle
+        final cleanResults = _cleanOverlappingDetections(results);
+        
+        if (shouldSave && cleanResults.isNotEmpty) {
           _lastSaveTime = now;
           if (_currentPosition != null) {
             _lastSavedPosition = {
@@ -173,7 +183,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
           final dateStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
           final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
           
-          for (var det in results) {
+          for (var det in cleanResults) {
             final conf = det['confidence'] ?? 0.0;
             final record = PotholeRecord(
               date: dateStr,
@@ -190,7 +200,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         
         if (mounted && _isDetecting) {
           setState(() {
-            _detections = results;
+            _detections = cleanResults;
           });
         }
         
@@ -202,6 +212,75 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
       }
     }
+  }
+
+  /// Aynı nesneyi temsil eden üst üste binmiş kutuları eler, yüksek olanı tutar
+  List<dynamic> _cleanOverlappingDetections(List<dynamic> rawDetections) {
+    if (rawDetections.isEmpty) return [];
+
+    List<dynamic> clean = [];
+    for (var det in rawDetections) {
+      final bbox = det['bbox'];
+      if (bbox == null || bbox.length < 4) continue;
+
+      bool isOverlapping = false;
+      int replaceIndex = -1;
+
+      for (int i = 0; i < clean.length; i++) {
+        final existing = clean[i];
+        final existingBbox = existing['bbox'];
+        if (existingBbox == null || existingBbox.length < 4) continue;
+
+        double overlap = _calculateOverlap(bbox, existingBbox);
+        if (overlap > 0.4) { // %40'tan fazla üst üste binme varsa aynı çukurdur
+          isOverlapping = true;
+          // Güven skoru daha yüksek olanı tercih et
+          if ((det['confidence'] ?? 0.0) > (existing['confidence'] ?? 0.0)) {
+            replaceIndex = i;
+          }
+          break;
+        }
+      }
+
+      if (!isOverlapping) {
+        clean.add(det);
+      } else if (replaceIndex != -1) {
+        clean[replaceIndex] = det;
+      }
+    }
+    return clean;
+  }
+
+  /// İki sınırlayıcı kutu arasındaki çakışma oranını kesişim / en küçük alan şeklinde hesaplar
+  double _calculateOverlap(List<dynamic> boxA, List<dynamic> boxB) {
+    double ax1 = (boxA[0] as num).toDouble();
+    double ay1 = (boxA[1] as num).toDouble();
+    double ax2 = (boxA[2] as num).toDouble();
+    double ay2 = (boxA[3] as num).toDouble();
+
+    double bx1 = (boxB[0] as num).toDouble();
+    double by1 = (boxB[1] as num).toDouble();
+    double bx2 = (boxB[2] as num).toDouble();
+    double by2 = (boxB[3] as num).toDouble();
+
+    double xMin = ax1 > bx1 ? ax1 : bx1;
+    double yMin = ay1 > by1 ? ay1 : by1;
+    double xMax = ax2 < bx2 ? ax2 : bx2;
+    double yMax = ay2 < by2 ? ay2 : by2;
+
+    if (xMax <= xMin || yMax <= yMin) {
+      return 0.0;
+    }
+
+    double intersectionArea = (xMax - xMin) * (yMax - yMin);
+
+    double areaA = (ax2 - ax1) * (ay2 - ay1);
+    double areaB = (bx2 - bx1) * (by2 - by1);
+
+    double minArea = areaA < areaB ? areaA : areaB;
+    if (minArea <= 0.0) return 0.0;
+
+    return intersectionArea / minArea;
   }
 
   @override

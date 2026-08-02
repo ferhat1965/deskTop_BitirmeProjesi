@@ -6,7 +6,7 @@ import 'screens/main_layout.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Windows Desktop için SQLite FFI ilklendirmesi
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
@@ -38,7 +38,6 @@ class PotholeApp extends StatelessWidget {
               primary: Color(0xFF2563EB),
               secondary: Color(0xFF059669), // Emerald 600
               surface: Colors.white,
-              background: Color(0xFFF8FAFC),
             ),
             textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
             useMaterial3: true,
@@ -51,7 +50,6 @@ class PotholeApp extends StatelessWidget {
               primary: Color(0xFF3B82F6),
               secondary: Color(0xFF10B981), // Emerald 500
               surface: Color(0xFF1E293B), // Slate 800
-              background: Color(0xFF0F172A),
             ),
             textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
             useMaterial3: true,

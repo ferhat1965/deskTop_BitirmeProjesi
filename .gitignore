@@ -43,3 +43,45 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# Backend artifacts & secrets
+.env
+backend/.env
+backend/__pycache__/
+backend/storage/
+backend/uploads/
+backend/output/
+backend/build/
+backend/dist/
+backend/*.spec.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated diagnostics and local installers
+analyze*.txt
+flutter_*.log
+installer_output/
+
+# Windows runner build
+windows/runner/Debug/
+windows/runner/Release/
+windows/runner/x64/
+windows/flutter/ephemeral/
+
+# OS
+.DS_Store
+Thumbs.db

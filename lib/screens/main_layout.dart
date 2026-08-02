@@ -37,11 +37,17 @@ class _MainLayoutState extends State<MainLayout> {
             labelType: NavigationRailLabelType.all,
             backgroundColor: Theme.of(context).colorScheme.surface,
             unselectedIconTheme: IconThemeData(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
-            selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+            selectedIconTheme: IconThemeData(
+              color: Theme.of(context).colorScheme.primary,
+            ),
             unselectedLabelTextStyle: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
               fontWeight: FontWeight.w500,
             ),
             selectedLabelTextStyle: TextStyle(
@@ -49,7 +55,9 @@ class _MainLayoutState extends State<MainLayout> {
               fontWeight: FontWeight.bold,
             ),
             useIndicator: true,
-            indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+            indicatorColor: Theme.of(
+              context,
+            ).colorScheme.primary.withValues(alpha: 0.2),
             leading: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Icon(
@@ -81,9 +89,15 @@ class _MainLayoutState extends State<MainLayout> {
               ),
             ],
           ),
-          
-          VerticalDivider(thickness: 1, width: 1, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05)),
-          
+
+          VerticalDivider(
+            thickness: 1,
+            width: 1,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.05),
+          ),
+
           // Main Content Area
           Expanded(
             child: AnimatedSwitcher(

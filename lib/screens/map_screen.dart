@@ -65,14 +65,15 @@ class _MapScreenState extends State<MapScreen> {
           Positioned.fill(
             child: FlutterMap(
               mapController: _mapController,
-              options: MapOptions(
-                initialCenter: const LatLng(38.6810, 39.2264), // Elazığ
+              options: const MapOptions(
+                initialCenter: LatLng(38.6810, 39.2264), // Elazığ
                 initialZoom: 14.0,
               ),
               children: [
                 TileLayer(
                   // Google Haritalar Uydu + İsimler (Hybrid) - Türkçe diline zorlandı
-                  urlTemplate: 'https://mt1.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}',
+                  urlTemplate:
+                      'https://mt1.google.com/vt/lyrs=y&hl=tr&x={x}&y={y}&z={z}',
                 ),
                 MarkerLayer(
                   markers: _potholes.map((pothole) {
@@ -88,11 +89,7 @@ class _MapScreenState extends State<MapScreen> {
                         onTap: () {
                           _showPotholeDetails(pothole);
                         },
-                        child: Icon(
-                          icon,
-                          color: color,
-                          size: 48,
-                        ),
+                        child: Icon(icon, color: color, size: 48),
                       ),
                     );
                   }).toList(),
@@ -106,7 +103,10 @@ class _MapScreenState extends State<MapScreen> {
             right: 24.0,
             child: SafeArea(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
@@ -135,7 +135,7 @@ class _MapScreenState extends State<MapScreen> {
                         Text(
                           '${_potholes.length} Çukur',
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold, 
+                            fontWeight: FontWeight.bold,
                             color: Colors.black87,
                             fontSize: 16,
                           ),
@@ -144,12 +144,16 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                     Row(
                       children: [
-                        Icon(Icons.satellite_alt, color: Colors.blue[600], size: 20),
+                        Icon(
+                          Icons.satellite_alt,
+                          color: Colors.blue[600],
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           'Uydu Haritası',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold, 
+                            fontWeight: FontWeight.bold,
                             color: Colors.black87,
                             fontSize: 16,
                           ),
@@ -176,10 +180,7 @@ class _MapScreenState extends State<MapScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(
-              _classIcons[className] ?? Icons.warning,
-              color: color,
-            ),
+            Icon(_classIcons[className] ?? Icons.warning, color: color),
             const SizedBox(width: 8),
             const Text('Kayıt Detayı'),
           ],
@@ -190,12 +191,18 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Row(
               children: [
-                const Text('Tür: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Tür: ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: color, width: 1.5),
                   ),
@@ -213,16 +220,20 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: 12),
             Text('Tarih: ${record.date} ${record.time}'),
             const SizedBox(height: 4),
-            Text('Güven Skoru: % ${(record.confidence * 100).toStringAsFixed(1)}'),
+            Text(
+              'Güven Skoru: % ${(record.confidence * 100).toStringAsFixed(1)}',
+            ),
             const SizedBox(height: 4),
-            Text('Konum: ${record.latitude.toStringAsFixed(6)}, ${record.longitude.toStringAsFixed(6)}'),
+            Text(
+              'Konum: ${record.latitude.toStringAsFixed(6)}, ${record.longitude.toStringAsFixed(6)}',
+            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Kapat'),
-          )
+          ),
         ],
       ),
     );

@@ -23,6 +23,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _loadRecords() async {
     final records = await DbService.instance.fetchAllPotholes();
+    if (!mounted) return;
     setState(() {
       _records = records;
       _isLoading = false;
@@ -36,7 +37,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     await DbService.instance.deletePothole(id);
     _selectedIds.remove(id);
-    _loadRecords();
+    await _loadRecords();
   }
 
   Future<void> _deleteSelectedRecords() async {
@@ -49,7 +50,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     setState(() {
       _selectedIds.clear();
     });
-    _loadRecords();
+    await _loadRecords();
   }
 
   Future<bool?> _showDeleteConfirmation(int count) {
@@ -110,7 +111,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
               child: ActionChip(
-                backgroundColor: Colors.redAccent.withOpacity(0.2),
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
                 side: const BorderSide(color: Colors.redAccent),
                 avatar: const Icon(
                   Icons.delete_sweep,
@@ -230,7 +231,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color, width: 1.5),
       ),

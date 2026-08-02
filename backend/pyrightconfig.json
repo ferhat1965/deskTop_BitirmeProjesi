@@ -1,0 +1,7 @@
+{
+  "include": ["app.py"],
+  "extraPaths": [".venv/Lib/site-packages"],
+  "pythonVersion": "3.13",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning"
+}

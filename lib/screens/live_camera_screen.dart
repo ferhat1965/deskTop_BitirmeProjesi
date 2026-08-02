@@ -20,6 +20,8 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   List<CameraDescription>? _cameras;
   bool _isDetecting = false;
   bool _isServerActive = false;
+  bool _isCheckingServer = false;
+  String? _cameraError;
   DateTime _lastSaveTime = DateTime.now();
   List<dynamic> _detections = [];
 
@@ -31,22 +33,28 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   @override
   void initState() {
     super.initState();
-    _initCamera();
-    _initLocation();
-    _checkServer();
-    
+    unawaited(_initCamera());
+    unawaited(_initLocation());
+    unawaited(_checkServer());
+
     // Sunucu durumunu her 2 saniyede bir kontrol et
     _serverCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      _checkServer();
+      unawaited(_checkServer());
     });
   }
 
   Future<void> _checkServer() async {
-    final isActive = await ApiService.checkServerStatus();
-    if (mounted && _isServerActive != isActive) {
-      setState(() {
-        _isServerActive = isActive;
-      });
+    if (_isCheckingServer) return;
+    _isCheckingServer = true;
+    try {
+      final isActive = await ApiService.checkServerStatus();
+      if (mounted && _isServerActive != isActive) {
+        setState(() {
+          _isServerActive = isActive;
+        });
+      }
+    } finally {
+      _isCheckingServer = false;
     }
   }
 
@@ -57,17 +65,16 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         desiredAccuracy: LocationAccuracy.best,
         timeLimit: const Duration(seconds: 15),
       );
-      _currentPosition = {
-        'latitude': pos.latitude,
-        'longitude': pos.longitude,
-      };
-      print("Windows Gerçek Konumu Alındı: ${pos.latitude}, ${pos.longitude} (Hassasiyet: ${pos.accuracy}m)");
+      _currentPosition = {'latitude': pos.latitude, 'longitude': pos.longitude};
+      debugPrint('Windows konumu başarıyla alındı.');
     } catch (e) {
-      print("Windows Konumu Alınamadı, IP'ye dönülüyor: $e");
+      debugPrint(
+        "Windows konumu alınamadı, IP tabanlı yaklaşık konum deneniyor: $e",
+      );
       // 2. Eğer Windows Konum izni verilmemişse veya çip yoksa IP üzerinden gerçek konuma en yakın şehri alıyoruz.
       _currentPosition = await ApiService.getLocationFromIP();
     }
-    
+
     // Her 2 saniyede bir konumu güncelle (Daha hassas takip için)
     _locationTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       try {
@@ -86,16 +93,28 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
   }
 
   Future<void> _initCamera() async {
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      _controller = CameraController(
+    try {
+      _cameras = await availableCameras();
+      if (_cameras == null || _cameras!.isEmpty) {
+        throw CameraException('camera_not_found', 'Kamera bulunamadı');
+      }
+      final controller = CameraController(
         _cameras![0],
         ResolutionPreset.high,
         enableAudio: false,
       );
-      await _controller!.initialize();
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      _controller = controller;
+      setState(() {});
+    } catch (error) {
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _cameraError = 'Kamera başlatılamadı: $error';
+        });
       }
     }
   }
@@ -111,22 +130,25 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         _isDetecting = true;
       });
       // Start async loop
-      _startDetectionLoop();
+      unawaited(_startDetectionLoop());
     }
   }
 
   Future<void> _startDetectionLoop() async {
     while (_isDetecting && mounted) {
-      if (_controller == null || !_controller!.value.isInitialized || _controller!.value.isTakingPicture) {
+      if (_controller == null ||
+          !_controller!.value.isInitialized ||
+          _controller!.value.isTakingPicture) {
         await Future.delayed(const Duration(milliseconds: 100));
         continue;
       }
 
+      XFile? picture;
       try {
-        final XFile picture = await _controller!.takePicture();
-        
+        picture = await _controller!.takePicture();
+
         final now = DateTime.now();
-        
+
         // 1. Gelişmiş Mükerrer Kontrolü ve Cooldown Akıllı Algoritması
         bool isDuplicate = false;
         if (_lastSavedPosition != null && _currentPosition != null) {
@@ -150,7 +172,8 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         }
 
         // Mükerrer değilse ve en az 1 saniye geçmişse kaydetmeye izin ver
-        bool shouldSave = !isDuplicate && now.difference(_lastSaveTime).inSeconds >= 1;
+        bool shouldSave =
+            !isDuplicate && now.difference(_lastSaveTime).inSeconds >= 1;
 
         final results = await ApiService.detectPotholesFile(
           picture.path,
@@ -158,10 +181,10 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
           latitude: _currentPosition?['latitude'],
           longitude: _currentPosition?['longitude'],
         );
-        
+
         // Tek kare içindeki çakışan (aynı çukuru temsil eden) mükerrer kutuları temizle
         final cleanResults = _cleanOverlappingDetections(results);
-        
+
         if (shouldSave && cleanResults.isNotEmpty) {
           _lastSaveTime = now;
           if (_currentPosition != null) {
@@ -170,17 +193,20 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
               'longitude': _currentPosition!['longitude']!,
             };
           }
-          
+
           // Resmi yerel kalici klasore kopyala
           final directory = await getApplicationDocumentsDirectory();
           final String dirPath = '${directory.path}/RoadGuard/Images';
           await Directory(dirPath).create(recursive: true);
-          final permanentImagePath = '$dirPath/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final permanentImagePath =
+              '$dirPath/${DateTime.now().millisecondsSinceEpoch}.jpg';
           await File(picture.path).copy(permanentImagePath);
-          
-          final dateStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-          final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-          
+
+          final dateStr =
+              "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+          final timeStr =
+              "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+
           for (var det in cleanResults) {
             final conf = det['confidence'] ?? 0.0;
             final record = PotholeRecord(
@@ -195,19 +221,26 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
             await DbService.instance.insertPothole(record);
           }
         }
-        
+
         if (mounted && _isDetecting) {
           setState(() {
             _detections = cleanResults;
           });
         }
-        
-        // İşlem bittikten sonra geçici resmi sil
-        File(picture.path).deleteSync();
-        
       } catch (e) {
-        print("Kare işleme hatası: $e");
+        debugPrint('Kare işleme hatası: $e');
         await Future.delayed(const Duration(milliseconds: 500));
+      } finally {
+        if (picture != null) {
+          final temporaryFile = File(picture.path);
+          if (await temporaryFile.exists()) {
+            try {
+              await temporaryFile.delete();
+            } on FileSystemException catch (error) {
+              debugPrint('Geçici kamera dosyası silinemedi: $error');
+            }
+          }
+        }
       }
     }
   }
@@ -230,7 +263,8 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         if (existingBbox == null || existingBbox.length < 4) continue;
 
         double overlap = _calculateOverlap(bbox, existingBbox);
-        if (overlap > 0.4) { // %40'tan fazla üst üste binme varsa aynı çukurdur
+        if (overlap > 0.4) {
+          // %40'tan fazla üst üste binme varsa aynı çukurdur
           isOverlapping = true;
           // Güven skoru daha yüksek olanı tercih et
           if ((det['confidence'] ?? 0.0) > (existing['confidence'] ?? 0.0)) {
@@ -292,6 +326,14 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_cameraError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(_cameraError!, textAlign: TextAlign.center),
+        ),
+      );
+    }
     if (_controller == null || !_controller!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -312,9 +354,14 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: _isServerActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                  color: _isServerActive
+                      ? Colors.green.withValues(alpha: 0.2)
+                      : Colors.red.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: _isServerActive ? Colors.green : Colors.red,
@@ -337,7 +384,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
                     ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -360,7 +407,9 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
                         CustomPaint(
                           painter: BoundingBoxPainter(
                             detections: _detections,
-                            imageSize: _controller!.value.previewSize ?? const Size(1280, 720),
+                            imageSize:
+                                _controller!.value.previewSize ??
+                                const Size(1280, 720),
                           ),
                         ),
                       ],
@@ -377,16 +426,24 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
               icon: Icon(_isDetecting ? Icons.stop : Icons.play_arrow),
               label: Text(_isDetecting ? 'Tespiti Durdur' : 'Tespiti Başlat'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isDetecting ? Colors.red : Theme.of(context).colorScheme.primary,
+                backgroundColor: _isDetecting
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 20,
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -417,9 +474,7 @@ class BoundingBoxPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (detections.isEmpty) return;
 
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     for (var det in detections) {
       final rect = det['bbox']; // [nx1, ny1, nx2, ny2] (normalized 0 to 1)
